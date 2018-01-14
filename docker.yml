@@ -1,0 +1,57 @@
+version: "3"
+services:
+
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8080:8080"
+    stop_grace_period: 1m
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+  mysql:
+    networks:
+      - backend
+    image: mysql
+    ports: 
+      - "3306:3306"
+    volumes:
+      - db_data2:/var/lib/mysql
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    environment:
+      MYSQL_DATABASE: my
+      MYSQL_USER: root
+      MYSQL_PASSWORD: MyPassword
+      MYSQL_ROOT_PASSWORD: MyPassword
+
+  worker1:
+    networks:
+      - backend
+    image: scripter51/worker
+    ports:
+      - "8099:8099"
+    deploy:
+      mode: replicated
+      replicas: 2
+      placement:
+        constraints: [node.role == worker]
+
+  master1:
+    networks:
+      - backend
+    image: scripter51/master
+    ports:
+      - "8090:8090"
+
+networks:
+  backend:
+    external:
+      name: mynetwork
+
+volumes:
+  db_data2:
